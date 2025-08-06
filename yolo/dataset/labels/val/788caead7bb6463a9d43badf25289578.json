@@ -1,0 +1,42 @@
+[
+  {
+    "jenis": "Lubang",
+    "tingkat": "Berat",
+    "coords": [
+      116,
+      349,
+      698,
+      604
+    ]
+  },
+  {
+    "jenis": "Lubang",
+    "tingkat": "Sedang",
+    "coords": [
+      500,
+      239,
+      716,
+      346
+    ]
+  },
+  {
+    "jenis": "Lubang",
+    "tingkat": "Sedang",
+    "coords": [
+      226,
+      216,
+      422,
+      272
+    ]
+  },
+  {
+    "jenis": "Lubang",
+    "tingkat": "Ringan",
+    "coords": [
+      61,
+      301,
+      224,
+      362
+    ]
+  }
+]

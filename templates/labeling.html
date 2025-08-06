@@ -1,0 +1,395 @@
+{% extends "base.html" %} {% block title %}Photo Labeling{% endblock %} {% block
+content %}
+<div class="container mt-4 col-lg-11">
+  <h2>Photo Labeling</h2>
+
+  <div class="row mb-4 mt-4">
+    <div class="col-md-3">
+      <div class="card bg-secondary text-white shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Total Sample</h5>
+          <p class="card-text fs-4">{{ total_sample }}</p>
+        </div>
+      </div>
+    </div>
+    {% for jenis, count in jenis_counter.items() %}
+    <div class="col-md-3">
+      <div
+        class="card {% if jenis == 'Lubang' %} bg-danger {% elif jenis == 'Retak Buaya' %} bg-warning {% elif jenis == 'Retak Memanjang' %} bg-info {% elif jenis == 'Retak Melintang' %} bg-primary {% else %} bg-dark {% endif %} text-white shadow-sm"
+      >
+        <div class="card-body">
+          <h5 class="card-title">{{ jenis }}</h5>
+          <p class="card-text fs-4">{{ count }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="d-flex justify-content-end mb-3">
+    <button
+      class="btn btn-success"
+      data-toggle="modal"
+      data-target="#uploadModal"
+    >
+      <i class="bi bi-upload"></i> Upload Photo
+    </button>
+  </div>
+  <!-- Upload Modal -->
+  <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Upload Photo</h5>
+          <button type="button" class="close text-white" data-dismiss="modal">
+            <span>&times;</span>
+          </button>
+        </div>
+        <form
+          action="{{ url_for('upload_sample') }}"
+          method="POST"
+          enctype="multipart/form-data"
+        >
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="image">Select Photo (JPG/PNG):</label>
+              <input
+                type="file"
+                name="image"
+                id="image"
+                class="form-control"
+                accept="image/*"
+                required
+                style="height: auto !important"
+              />
+              <small class="text-muted"
+                >* The image will be used for manual labeling.</small
+              >
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-plus-circle"></i> Upload
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if images %}
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title">📷 List of Photo</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Photo</th>
+              <th>Type of Road Damage</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for img in images %}
+            <tr>
+              <td>
+                <img
+                  src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
+                  class="img-thumbnail"
+                  style="max-width: 100px"
+                />
+              </td>
+              <td id="label-cell-{{ img.id }}">
+                {{ img.jenis_kerusakan or "Belum dilabel" }}
+              </td>
+              <td>
+                <button
+                  class="btn btn-sm btn-outline-primary open-labeling"
+                  data-toggle="modal"
+                  data-target="#modalLabeling"
+                  data-id="{{ img.id }}"
+                  data-filename="{{ img.filename }}"
+                  data-box-id="boxes-{{ img.id }}"
+                >
+                  ✏️ Label
+                </button>
+
+                <form
+                  method="POST"
+                  action="{{ url_for('delete_sample', filename=img.filename) }}"
+                  class="d-inline-block"
+                  onsubmit="return confirm('Yakin ingin menghapus gambar ini?');"
+                >
+                  <button class="btn btn-sm btn-outline-danger">
+                    🗑 Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+            <script type="application/json" id="boxes-{{ img.id }}">
+              {{ img.boxes | tojson }}
+            </script>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-info">Tidak ada gambar yang tersedia.</div>
+  {% endif %}
+
+  <!-- MODAL -->
+  <div class="modal fade" id="modalLabeling" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Photo Labeling</h5>
+          <button type="button" class="close" data-dismiss="modal">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div
+            class="canvas-container text-center"
+            style="overflow: auto; position: relative"
+          >
+            <div style="position: relative; display: inline-block">
+              <img
+                id="modal-img"
+                src=""
+                class="img-fluid"
+                style="
+                  user-select: none;
+                  display: block;
+                  max-width: 100%;
+                  height: auto;
+                "
+                draggable="false"
+              />
+              <canvas
+                id="modal-canvas"
+                class="position-absolute"
+                style="top: 0; left: 0; z-index: 10"
+              ></canvas>
+            </div>
+          </div>
+          <hr />
+          <div id="box-list" class="mt-3">
+            <h6>Bounding Box List</h6>
+            <div id="box-items"></div>
+          </div>
+          <button id="save-labels-btn" class="btn btn-success mt-3 float-end">
+            📂 Save Label
+          </button>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .canvas-container {
+      position: relative;
+      display: inline-block;
+    }
+    #modal-img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      user-select: none;
+    }
+    #modal-canvas {
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+  </style>
+
+  <style>
+    .canvas-container {
+      position: relative;
+      display: inline-block;
+    }
+    #modal-img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      user-select: none;
+    }
+    #modal-canvas {
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+  </style>
+
+  <script>
+    let currentId = null;
+    let currentFilename = "";
+    let boxes = [];
+    let previewBox = null;
+
+    function updateBoxList() {
+      const list = document.getElementById("box-items");
+      list.innerHTML = "";
+      boxes.forEach((b, i) => {
+        const div = document.createElement("div");
+        div.className = "form-inline mb-2";
+        div.innerHTML = `
+        <span class="mr-2">#${i + 1}</span>
+        <select class="form-control mr-2" data-index="${i}" name="jenis">
+          <option ${b.jenis === "Lubang" ? "selected" : ""}>Lubang</option>
+          <option ${
+            b.jenis === "Retak Buaya" ? "selected" : ""
+          }>Retak Buaya</option>
+          <option ${
+            b.jenis === "Retak Memanjang" ? "selected" : ""
+          }>Retak Memanjang</option>
+          <option ${
+            b.jenis === "Retak Melintang" ? "selected" : ""
+          }>Retak Melintang</option>
+        </select>
+        <button class="btn btn-sm btn-danger remove-box" data-index="${i}">Hapus</button>
+      `;
+        list.appendChild(div);
+      });
+
+      document.querySelectorAll(".remove-box").forEach((btn) => {
+        btn.onclick = () => {
+          const idx = parseInt(btn.getAttribute("data-index"));
+          boxes.splice(idx, 1);
+          updateBoxList();
+          drawAll(
+            document.getElementById("modal-canvas").getContext("2d"),
+            document.getElementById("modal-canvas")
+          );
+        };
+      });
+
+      document.querySelectorAll("#box-items select").forEach((select) => {
+        select.onchange = () => {
+          const i = parseInt(select.getAttribute("data-index"));
+          if (select.name === "jenis") boxes[i].jenis = select.value;
+        };
+      });
+    }
+
+    function drawAll(ctx, canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      boxes.forEach((b, i) => {
+        ctx.beginPath();
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 1;
+        ctx.rect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+        ctx.font = "bold 18px sans-serif";
+        ctx.fillText(`#${i + 1}`, b.x1 + 4, b.y1 + 20);
+      });
+      if (previewBox) {
+        ctx.strokeStyle = "rgba(0, 0, 255, 0.9)";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 3]);
+        ctx.strokeRect(
+          previewBox.x1,
+          previewBox.y1,
+          previewBox.x2 - previewBox.x1,
+          previewBox.y2 - previewBox.y1
+        );
+        ctx.setLineDash([]);
+      }
+    }
+
+    document.querySelectorAll(".open-labeling").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentId = btn.getAttribute("data-id");
+        currentFilename = btn.getAttribute("data-filename");
+        const imageUrl = `/static/uploads/${currentFilename}`;
+        const img = document.getElementById("modal-img");
+        img.src = imageUrl;
+        const raw = btn.getAttribute("data-boxes");
+        console.log("🔍 DATA DARI ATRIBUT:", raw);
+        const boxScript = document.getElementById(
+          btn.getAttribute("data-box-id")
+        );
+        boxes = boxScript ? JSON.parse(boxScript.textContent) : [];
+        boxes = boxes.map((b) => {
+          return {
+            x1: b[0],
+            y1: b[1],
+            x2: b[2],
+            y2: b[3],
+            jenis: b.length >= 5 ? b[4] : "Lubang",
+          };
+        });
+
+        img.onload = () => {
+          const canvas = document.getElementById("modal-canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          drawAll(canvas.getContext("2d"), canvas);
+          updateBoxList();
+        };
+      });
+    });
+
+    (() => {
+      let drawing = false,
+        startX = 0,
+        startY = 0;
+      const canvas = document.getElementById("modal-canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.addEventListener("mousedown", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        drawing = true;
+        previewBox = null;
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        previewBox = {
+          x1: Math.min(startX, x),
+          y1: Math.min(startY, y),
+          x2: Math.max(startX, x),
+          y2: Math.max(startY, y),
+        };
+        drawAll(ctx, canvas);
+      });
+
+      canvas.addEventListener("mouseup", () => {
+        if (!drawing || !previewBox) return;
+        drawing = false;
+        boxes.push({ ...previewBox, jenis: "Lubang" });
+        previewBox = null;
+        drawAll(ctx, canvas);
+        updateBoxList();
+      });
+    })();
+
+    document.getElementById("save-labels-btn").addEventListener("click", () => {
+      const payload = boxes.map((b) => [b.x1, b.y1, b.x2, b.y2, b.jenis]);
+      fetch(`/save_label/${currentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ boxes: payload }),
+      }).then((res) => {
+        if (res.ok) {
+          const scriptTag = document.getElementById(`boxes-${currentId}`);
+          if (scriptTag) {
+            scriptTag.textContent = JSON.stringify(payload);
+          }
+          alert("Label saved successfully!");
+          $("#modalLabeling").modal("hide");
+        } else {
+          alert("Failed to save label.");
+        }
+      });
+    });
+  </script>
+  {% endblock %}
+</div>

@@ -1,0 +1,157 @@
+{% extends "base.html" %} {% block title %}Tambah Label{% endblock %} {% block
+content %}
+<div class="container mt-4">
+  <h3>✏️ Labeling Gambar</h3>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body text-center">
+      <div style="position: relative; display: inline-block">
+        <img
+          src="{{ url_for('static', filename='uploads/' ~ image.filename) }}"
+          class="img-fluid"
+        />
+
+        <canvas
+          id="label-canvas"
+          class="position-absolute"
+          style="top: 0; left: 0; z-index: 10"
+        ></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">📦 Bounding Box List</h5>
+      <div id="box-items"></div>
+      <button id="save-labels-btn" class="btn btn-success mt-3 float-end">
+        📂 Simpan Label
+      </button>
+      <a href="{{ url_for('labeling') }}" class="btn btn-secondary mt-3"
+        >⬅️ Kembali</a
+      >
+    </div>
+  </div>
+</div>
+
+<style>
+  #detail-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  let selectedId = null;
+
+  document.querySelectorAll(".btn-delete").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      selectedId = this.getAttribute("data-id");
+    });
+  });
+
+  document
+    .getElementById("confirmDelete")
+    .addEventListener("click", function () {
+      if (!selectedId) return;
+      fetch("/delete_hasil/" + selectedId, { method: "POST" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            $("#deleteModal").modal("hide");
+            location.reload();
+          }
+        });
+    });
+
+  document.querySelectorAll(".btn-detail").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filename = btn.getAttribute("data-filename");
+      const id = btn.getAttribute("data-id");
+      const imageUrl =
+        `/static/uploads_analisa/{{ folder.nama_folder }}/` + filename;
+
+      const img = document.getElementById("detail-img");
+      const canvas = document.getElementById("detail-canvas");
+      const ctx = canvas.getContext("2d");
+
+      img.src = imageUrl;
+
+      const boxScript = document.getElementById("boxes-" + id);
+      if (!boxScript) return;
+      const boxes = JSON.parse(boxScript.textContent);
+
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        boxes.forEach((b, i) => {
+          ctx.beginPath();
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 2;
+          ctx.rect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(255,0,0,0.7)";
+          ctx.font = "14px sans-serif";
+          ctx.fillText(
+            `${b.jenis} (${b.tingkat_kerusakan})`,
+            b.x1 + 4,
+            b.y1 + 16
+          );
+        });
+      };
+    });
+  });
+</script>
+<script>
+  // Select all
+  document.getElementById("selectAll").addEventListener("change", function () {
+    const checked = this.checked;
+    document.querySelectorAll(".select-item").forEach((cb) => {
+      cb.checked = checked;
+    });
+  });
+
+  // Handle bulk delete
+  document
+    .getElementById("bulkDeleteForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const selected = Array.from(
+        document.querySelectorAll(".select-item:checked")
+      ).map((cb) => cb.value);
+
+      if (selected.length === 0) {
+        alert("Tidak ada gambar yang dipilih.");
+        return;
+      }
+
+      if (
+        !confirm(
+          "Yakin ingin menghapus " + selected.length + " gambar terpilih?"
+        )
+      )
+        return;
+
+      fetch("/delete_bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: selected }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert("Gagal menghapus data.");
+          }
+        });
+    });
+</script>
+{% endblock %}

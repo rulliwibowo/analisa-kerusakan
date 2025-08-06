@@ -1,0 +1,4 @@
+train: /Users/rulli_wibowo/Documents/analisa-foto-02/yolo/dataset/images/train
+val: /Users/rulli_wibowo/Documents/analisa-foto-02/yolo/dataset/images/val
+nc: 4
+names: ["Lubang", "Retak Buaya", "Retak Memanjang", "Retak Melintang"]

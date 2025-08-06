@@ -1,0 +1,32 @@
+[
+  {
+    "jenis": "Lubang",
+    "tingkat": "Sedang",
+    "coords": [
+      450,
+      543,
+      863,
+      708
+    ]
+  },
+  {
+    "jenis": "Retak Buaya",
+    "tingkat": "Sedang",
+    "coords": [
+      402,
+      310.5,
+      936,
+      576.5
+    ]
+  },
+  {
+    "jenis": "Retak Memanjang",
+    "tingkat": "Sedang",
+    "coords": [
+      168,
+      126.5,
+      288,
+      326.5
+    ]
+  }
+]

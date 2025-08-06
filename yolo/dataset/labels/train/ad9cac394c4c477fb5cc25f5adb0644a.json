@@ -1,0 +1,29 @@
+[
+  {
+    "jenis": "Lubang",
+    "coords": [
+      450,
+      543,
+      863,
+      708
+    ]
+  },
+  {
+    "jenis": "Retak Buaya",
+    "coords": [
+      402,
+      310,
+      936,
+      576
+    ]
+  },
+  {
+    "jenis": "Retak Memanjang",
+    "coords": [
+      168,
+      126,
+      288,
+      326
+    ]
+  }
+]
