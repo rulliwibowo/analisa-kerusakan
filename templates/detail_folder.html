@@ -1,228 +1,187 @@
-{% extends "base.html" %} {% block title %}Detail Folder{% endblock %} {% block
+{% extends "base.html" %} {% block title %}Folder Detail{% endblock %} {% block
+page_title %} 📂 Folder: {{ folder.nama_folder }} {% endblock %} {% block
 content %}
-
-<div class="container mt-4 col-lg-11">
-  <h2>📁 Folder: {{ folder.nama_folder }}</h2>
-  <p><strong>Description:</strong> {{ folder.informasi }}</p>
-
-  <div class="d-flex justify-content-end mb-3">
-    <button
-      class="btn btn-primary"
-      data-toggle="modal"
-      data-target="#uploadModal"
-    >
-      <i class="bi bi-upload me-2"></i> Upload & Analysis
-    </button>
-  </div>
-
-  <!-- MODAL UPLOAD -->
-  <div
-    class="modal fade"
-    id="uploadModal"
-    tabindex="-1"
-    role="dialog"
-    aria-labelledby="uploadModalLabel"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <form
-          action="{{ url_for('upload_analisa', folder_id=folder.id) }}"
-          method="POST"
-          enctype="multipart/form-data"
+<div class="row">
+  <!-- Folder Info and Upload -->
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div
+        class="card-header d-flex justify-content-between align-items-center"
+      >
+        <h5 class="mb-0">Folder Details</h5>
+        <button
+          class="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#uploadModal"
         >
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title" id="uploadModalLabel">Upload & Analysis</h5>
-            <button type="button" class="close text-white" data-dismiss="modal">
-              <span>&times;</span>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="image">Select Photo (JPG/PNG):</label>
-              <input
-                type="file"
-                class="form-control"
-                id="image"
-                name="image[]"
-                accept="image/*"
-                multiple
-                required
-                style="height: auto !important"
-              />
-              <small class="text-muted"
-                >* The photo will be analyzed immediately by the system.
-              </small>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">
-              <i class="bi bi-search"></i> Analyze Now
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+          <i class="bi bi-upload me-1"></i> Upload & Analysis
+        </button>
+      </div>
+      <div class="card-body">
+        <p class="mb-0"><strong>Description:</strong> {{ folder.informasi }}</p>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="card mt-4 shadow-sm">
-    <div class="card-body">
-      <h5 class="card-title mb-3">📷 Photo and Analysis Results</h5>
-
-      <form id="bulkDeleteForm">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="text-muted">Check the photos you want to delete.</span>
-          <button type="submit" class="btn btn-sm btn-danger">
-            🗑️ Delete Selected
-          </button>
+<!-- MODAL UPLOAD -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form
+        action="{{ url_for('upload_analisa', folder_id=folder.id) }}"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadModalLabel">Upload & Analysis</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
         </div>
-
-        <div class="table-responsive">
-          <table class="table table-bordered align-middle">
-            <thead class="bg-primary text-white">
-              <tr>
-                <th class="text-center">
-                  <input type="checkbox" id="selectAll" />
-                </th>
-                <th class="text-center">Photo</th>
-                <th class="text-center">Type of Damage</th>
-                <th class="text-center">Area %</th>
-                <th class="text-center">DV</th>
-                <th class="text-center">PCI</th>
-                <th class="text-center" style="width: 200px">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for h in hasil_list %}
-              <tr>
-                <td class="align-top text-center">
-                  <div class="form-check m-0">
-                    <input
-                      type="checkbox"
-                      class="form-check-input select-item"
-                      name="selected_ids"
-                      value="{{ h.id }}"
-                    />
-                  </div>
-                </td>
-                <td class="text-center">
-                  <img
-                    src="{{ url_for('static', filename='uploads_analisa/' ~ folder.nama_folder ~ '/' ~ h.filename) }}"
-                    class="img-thumbnail img-detail"
-                    style="max-width: 100px; cursor: pointer"
-                    data-toggle="modal"
-                    data-target="#modalDetail"
-                    data-area="{{ h.luas_total | default('0') }}"
-                    data-filename="{{ h.filename }}"
-                    data-id="{{ h.id }}"
-                    data-detail="{{ h.detail_kerusakan | default('Tidak ada detail') }}"
-                    data-pci="{{ h.nilai_pci | default('N/A') }}"
-                    data-dv="{{ h.total_deduct | default('N/A') }}"
-                    alt="Gambar"
-                  />
-                </td>
-                <td>
-                  {% set jenis_list = [] %} {% for b in h.boxes_json %} {% if
-                  b.jenis not in jenis_list %} {% set _ =
-                  jenis_list.append(b.jenis) %} {% endif %} {% endfor %} {% if
-                  jenis_list %}
-                  <ul class="mb-0" style="padding-left: 20px">
-                    {% for jenis in jenis_list %}
-                    <li>{{ jenis }}</li>
-                    {% endfor %}
-                  </ul>
-                  {% else %}
-                  <span class="text-muted">Tidak ada kerusakan</span>
-                  {% endif %}
-                </td>
-                <td class="text-center">
-                  {{ h.luas_total | default(0) | int }}
-                </td>
-                <td class="text-center">
-                  {{ h.total_deduct | default(0) | int }}
-                </td>
-                <td style="text-align: center">
-                  {{ h.nilai_pci | int if h.nilai_pci is not none else 'N/A' }}
-                </td>
-
-                <td class="text-center">
-                  <div class="d-flex justify-content-center">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary btn-detail"
-                      style="width: 100px"
-                      data-toggle="modal"
-                      data-target="#modalDetail"
-                      data-area="{{ h.luas_total | default('0') }}"
-                      data-filename="{{ h.filename }}"
-                      data-id="{{ h.id }}"
-                      data-detail="{{ h.detail_kerusakan | default('Tidak ada detail') }}"
-                      data-pci="{{ h.nilai_pci | default('N/A') }}"
-                      data-dv="{{ h.total_deduct | default('N/A') }}"
-                    >
-                      🔍 Detail
-                    </button>
-
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-danger btn-delete ml-2"
-                      style="width: 100px"
-                      data-id="{{ h.id }}"
-                      data-toggle="modal"
-                      data-target="#deleteModal"
-                    >
-                      🗑️ Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <script type="application/json" id="boxes-{{ h.id }}">
-                {{ h.boxes_json | tojson | safe }}
-              </script>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="image" class="form-label"
+              >Select Photo (JPG/PNG):</label
+            >
+            <input
+              type="file"
+              class="form-control"
+              id="image"
+              name="image[]"
+              accept="image/*"
+              multiple
+              required
+            />
+            <div class="form-text">
+              * The photo will be analyzed immediately by the system.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search me-1"></i> Analyze Now
+          </button>
         </div>
       </form>
     </div>
   </div>
+</div>
 
-  <a href="{{ url_for('index') }}" class="btn btn-secondary mt-4">⬅️ Back</a>
+<!-- Photo Grid Actions -->
+<div
+  class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3"
+>
+  <h5 class="mb-0">📷 Photo and Analysis Results</h5>
+  <div class="d-flex align-items-center gap-3">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="selectAll" />
+      <label for="selectAll" class="form-check-label">Select All</label>
+    </div>
+    <form id="bulkDeleteForm">
+      <button type="submit" class="btn btn-sm btn-outline-danger">
+        <i class="bi bi-trash me-1"></i> Delete Selected
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Photo Grid -->
+<div class="row g-4">
+  {% for h in hasil_list %}
+  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body p-2">
+        <!-- Container untuk efek hover -->
+        <div class="image-container position-relative mb-2">
+          <img
+            src="{{ url_for('static', filename='uploads_analisa/' ~ folder.nama_folder ~ '/' ~ h.filename) }}"
+            class="img-fluid rounded img-detail"
+            style="cursor: pointer; aspect-ratio: 4/3; object-fit: cover"
+            data-bs-toggle="modal"
+            data-bs-target="#modalDetail"
+            data-area="{{ h.luas_total | default('0') }}"
+            data-filename="{{ h.filename }}"
+            data-id="{{ h.id }}"
+            data-detail="{{ h.detail_kerusakan | default('Tidak ada detail') }}"
+            data-pci="{{ h.nilai_pci | default('N/A') }}"
+            data-dv="{{ h.total_deduct | default('N/A') }}"
+            alt="Analysis Result"
+          />
+          <!-- Overlay yang hanya muncul saat hover -->
+          <div class="image-overlay">
+            <input
+              class="form-check-input select-item"
+              type="checkbox"
+              name="selected_ids"
+              value="{{ h.id }}"
+            />
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <small class="text-muted" title="{{ h.filename }}"
+            >{{ h.filename[:15] }}{% if h.filename|length > 15 %}...{% endif
+            %}</small
+          >
+          <span class="badge bg-label-success"
+            >PCI: {{ h.nilai_pci | int }}</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="boxes-{{ h.id }}">
+    {{ h.boxes_json | tojson | safe }}
+  </script>
+  {% endfor %} {% if not hasil_list %}
+  <div class="col-12">
+    <div class="alert alert-info text-center">
+      No photos have been analyzed in this folder yet.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="mt-4">
+  <a href="{{ url_for('daftar_folder') }}" class="btn btn-secondary"
+    ><i class="bi bi-arrow-left me-1"></i> Back to Folder List</a
+  >
 </div>
 
 <!-- MODAL DELETE -->
-<div
-  class="modal fade"
-  id="deleteModal"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="deleteModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Konfirmasi Penghapusan</h5>
-        <button type="button" class="close" data-dismiss="modal">
-          <span>&times;</span>
-        </button>
+        <h5 class="modal-title">Confirm Deletion</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
       </div>
-      <div class="modal-body">Apakah Anda yakin ingin menghapus foto ini?</div>
+      <div class="modal-body">Are you sure you want to delete this photo?</div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-          Batal
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-dismiss="modal"
+        >
+          Cancel
         </button>
         <button type="button" class="btn btn-danger" id="confirmDelete">
-          Hapus
+          Delete
         </button>
       </div>
     </div>
@@ -231,17 +190,23 @@ content %}
 
 <!-- MODAL DETAIL GAMBAR -->
 <div class="modal fade" id="modalDetail" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+  <div
+    class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered"
+    role="document"
+  >
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Detail Analisa</h5>
-        <button type="button" class="close" data-dismiss="modal">
-          <span>&times;</span>
-        </button>
+        <h5 class="modal-title">Analysis Detail</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
       </div>
       <div class="modal-body text-center">
         <div style="position: relative; display: inline-block">
-          <img id="detail-img" src="" style="max-width: 100%" />
+          <img id="detail-img" src="" style="max-width: 100%; height: auto" />
           <canvas
             id="detail-canvas"
             class="position-absolute"
@@ -249,25 +214,25 @@ content %}
           ></canvas>
           <div id="detail-info" class="mt-3 text-start">
             <div class="card mt-3 shadow-sm">
-              <div class="card-header bg-primary text-white">
+              <div class="card-header">
                 <i class="bi bi-bar-chart-line"></i> Detection Result
               </div>
               <div class="card-body">
                 <div class="row text-center">
                   <div class="col-md-4 mb-3">
-                    <h6>Luas Kerusakan</h6>
+                    <h6 class="mb-1">Damage Area</h6>
                     <p class="h5 text-danger mb-0">
                       <span id="info-area">-</span>
                     </p>
                   </div>
                   <div class="col-md-4 mb-3">
-                    <h6>Deduct Value</h6>
+                    <h6 class="mb-1">Deduct Value</h6>
                     <p class="h5 text-warning mb-0">
                       <span id="info-dv">-</span>
                     </p>
                   </div>
                   <div class="col-md-4 mb-3">
-                    <h6>PCI</h6>
+                    <h6 class="mb-1">PCI</h6>
                     <p class="h5 text-success mb-0">
                       <span id="info-pci">-</span>
                     </p>
@@ -283,17 +248,151 @@ content %}
 </div>
 
 <style>
-  #detail-canvas {
+  .image-container .image-overlay {
     position: absolute;
     top: 0;
     left: 0;
-    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3); /* Overlay gelap saat hover */
+    opacity: 0; /* Sembunyi secara default */
+    transition: opacity 0.2s ease-in-out;
+    display: flex;
+    align-items: flex-start;
+    padding: 0.8rem;
+    border-radius: 0.375rem; /* Sesuaikan dengan radius gambar */
+    pointer-events: none; /* Biarkan klik menembus overlay ke gambar di bawahnya */
+  }
+
+  .image-container:hover .image-overlay,
+  .image-container.is-selected .image-overlay {
+    opacity: 1; /* Tampilkan saat hover atau tercentang */
+  }
+
+  .image-container .image-overlay .form-check-input {
+    pointer-events: auto; /* Tapi, buat checkbox tetap bisa diklik */
+  }
+
+  .image-container .form-check-input {
+    transform: scale(1.2); /* Membuat checkbox sedikit lebih besar */
   }
 </style>
 
 <script>
   let selectedId = null;
 
+  // --- LOGIKA BARU UNTUK MODAL DETAIL ---
+  const detailModal = document.getElementById("modalDetail");
+
+  // 1. Saat tombol/gambar detail diklik, hanya siapkan data untuk modal.
+  document.querySelectorAll(".img-detail, .btn-detail").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // Simpan semua data yang dibutuhkan di dalam dataset modal itu sendiri.
+      detailModal.dataset.filename = btn.dataset.filename;
+      detailModal.dataset.id = btn.dataset.id;
+      detailModal.dataset.dv = btn.dataset.dv;
+      detailModal.dataset.pci = btn.dataset.pci;
+      detailModal.dataset.area = btn.dataset.area;
+    });
+  });
+
+  // 2. Saat modal SUDAH SELESAI ditampilkan, jalankan logika gambar & canvas.
+  detailModal.addEventListener("shown.bs.modal", () => {
+    // Ambil data yang sudah kita simpan sebelumnya.
+    const { filename, id, dv, pci, area } = detailModal.dataset;
+    if (!filename) return;
+
+    const imageUrl =
+      `/static/uploads_analisa/{{ folder.nama_folder }}/` + filename;
+
+    const img = document.getElementById("detail-img");
+    const canvas = document.getElementById("detail-canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Hapus konten lama untuk memastikan bersih.
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    img.removeAttribute("src");
+
+    // Isi info teks.
+    const dvValue = parseFloat(dv);
+    document.getElementById("info-dv").textContent = isNaN(dvValue)
+      ? "-"
+      : Math.round(dvValue);
+    document.getElementById("info-pci").textContent = Math.round(
+      parseFloat(pci)
+    );
+    document.getElementById("info-area").textContent =
+      parseFloat(area).toFixed(0) + " %";
+
+    // Ambil data bounding box dari script tag.
+    const boxScript = document.getElementById("boxes-" + id);
+    if (!boxScript) return;
+    const boxes = JSON.parse(boxScript.textContent);
+
+    // Definisikan fungsi untuk menggambar.
+    const drawCanvasContent = function () {
+      // Karena event ini berjalan SETELAH modal terlihat, ukuran clientWidth/Height dijamin benar.
+      canvas.width = img.clientWidth;
+      canvas.height = img.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const scaleX = canvas.width / img.naturalWidth;
+      const scaleY = canvas.height / img.naturalHeight;
+
+      boxes.forEach((b) => {
+        ctx.beginPath();
+
+        let strokeColor;
+        switch (b.jenis) {
+          case "Retak Buaya":
+            strokeColor = "#ff3e1d";
+            break; // danger
+          case "Lubang":
+            strokeColor = "#ffab00";
+            break; // warning
+          case "Retak Memanjang":
+            strokeColor = "#03c3ec";
+            break; // info
+          case "Retak Melintang":
+            strokeColor = "#71dd37";
+            break; // success
+          default:
+            strokeColor = "#8592a3"; // secondary
+        }
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.rect(
+          b.x1 * scaleX,
+          b.y1 * scaleY,
+          (b.x2 - b.x1) * scaleX,
+          (b.y2 - b.y1) * scaleY
+        );
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.font = "14px sans-serif";
+        ctx.fillText(
+          `${b.jenis} (${b.tingkat_kerusakan}) - ${b.luas_persen?.toFixed(
+            2
+          )}% | DV: ${b.deduct_value}`,
+          b.x1 * scaleX + 4,
+          b.y1 * scaleY + 16
+        );
+      });
+    };
+
+    // Pasang 'pendengar' SEBELUM menyuruh gambar dimuat.
+    img.onload = drawCanvasContent;
+    // Suruh gambar untuk dimuat.
+    img.setAttribute("src", imageUrl);
+    // Jika gambar sudah di-cache, 'onload' mungkin tidak terpicu, jadi panggil manual.
+    if (img.complete) {
+      drawCanvasContent();
+    }
+  });
+
+  // --- LOGIKA UNTUK MODAL DELETE ---
   document.querySelectorAll(".btn-delete").forEach((btn) => {
     btn.addEventListener("click", function () {
       selectedId = this.getAttribute("data-id");
@@ -308,111 +407,11 @@ content %}
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            $("#deleteModal").modal("hide");
+            // Tidak perlu jQuery, cukup reload halaman
             location.reload();
           }
         });
     });
-
-  document.querySelectorAll(".img-detail, .btn-detail").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const filename = btn.getAttribute("data-filename");
-      const id = btn.getAttribute("data-id");
-      const imageUrl =
-        `/static/uploads_analisa/{{ folder.nama_folder }}/` + filename;
-
-      const img = document.getElementById("detail-img");
-      const canvas = document.getElementById("detail-canvas");
-      const ctx = canvas.getContext("2d");
-
-      img.src = imageUrl;
-
-      // Tambahkan ini:
-      const dv = parseFloat(btn.getAttribute("data-dv"));
-      document.getElementById("info-dv").textContent = isNaN(dv)
-        ? "-"
-        : Math.round(dv);
-
-      document.getElementById("info-pci").textContent = Math.round(
-        parseFloat(btn.getAttribute("data-pci"))
-      );
-
-      const boxScript = document.getElementById("boxes-" + id);
-      if (!boxScript) return;
-      const boxes = JSON.parse(boxScript.textContent);
-
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Set luas dari backend
-        document.getElementById("info-area").textContent =
-          parseFloat(btn.getAttribute("data-area")).toFixed(0) + " %";
-
-        // Gambar bounding box
-        boxes.forEach((b) => {
-          ctx.beginPath();
-
-          let strokeColor = "red";
-          let fillColor = "rgba(255,0,0,0.7)";
-          switch (b.jenis) {
-            case "Retak Buaya":
-              strokeColor = "red";
-              fillColor = "rgba(255, 0, 0, 0.7)";
-              break;
-            case "Lubang":
-              strokeColor = "yellow";
-              fillColor = "rgba(255, 255, 0, 0.6)";
-              break;
-            case "Retak Memanjang":
-              strokeColor = "blue";
-              fillColor = "rgba(0, 0, 255, 0.5)";
-              break;
-            case "Retak Melintang":
-              strokeColor = "green";
-              fillColor = "rgba(0, 255, 0, 0.4)";
-              break;
-            default:
-              strokeColor = "gray";
-              fillColor = "rgba(128, 128, 128, 0.5)";
-          }
-
-          ctx.strokeStyle = strokeColor;
-          ctx.lineWidth = 2;
-          ctx.rect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
-          ctx.stroke();
-
-          ctx.fillStyle = fillColor;
-          ctx.font = "14px sans-serif";
-          ctx.fillText(
-            `${b.jenis} (${b.tingkat_kerusakan}) - ${b.luas_persen?.toFixed(
-              2
-            )}% | DV: ${b.deduct_value}`,
-            b.x1 + 4,
-            b.y1 + 16
-          );
-        });
-
-        // Isi tabel kerusakan
-        const tbody = document.querySelector("#table-detail-kerusakan tbody");
-        tbody.innerHTML = "";
-
-        let totalDV = 0;
-        boxes.forEach((b) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-      <td>${b.jenis}</td>
-      <td>${b.tingkat_kerusakan}</td>
-      <td>${(b.luas_persen ?? 0).toFixed(0)}%</td>
-      <td>${(b.deduct_value ?? 0).toFixed(0)}</td>
-    `;
-          tbody.appendChild(row);
-          totalDV += b.deduct_value ?? 0;
-        });
-      };
-    });
-  });
 </script>
 <script>
   // Select all
@@ -420,6 +419,18 @@ content %}
     const checked = this.checked;
     document.querySelectorAll(".select-item").forEach((cb) => {
       cb.checked = checked;
+      // Tambahkan/hapus class 'is-selected' pada container
+      cb.closest(".image-container").classList.toggle("is-selected", checked);
+    });
+  });
+
+  // Tambahkan event listener untuk setiap checkbox agar overlay tetap terlihat
+  document.querySelectorAll(".select-item").forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      this.closest(".image-container").classList.toggle(
+        "is-selected",
+        this.checked
+      );
     });
   });
 

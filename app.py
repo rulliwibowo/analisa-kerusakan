@@ -303,6 +303,7 @@ def tambah_folder():
 @app.route("/folder/<int:folder_id>")
 @login_required
 def lihat_foto_folder(folder_id):
+    from collections import Counter
     conn = get_db_connection()
 
     # Ambil info folder
@@ -330,9 +331,49 @@ def lihat_foto_folder(folder_id):
         boxes_json = [dict(b) for b in boxes]
         hasil_list.append(dict(h, boxes_json=boxes_json))
 
+    # Hitung statistik ringkasan
+    total_photos = len(hasil_list)
+    photos_with_damage = sum(1 for h in hasil_list if h['boxes_json'])
+    
+    all_pci = [h['nilai_pci'] for h in hasil_list if h['nilai_pci'] is not None]
+    average_pci = sum(all_pci) / len(all_pci) if all_pci else 0
+
+    damage_counter = Counter()
+    for h in hasil_list:
+        for box in h['boxes_json']:
+            damage_counter[box['jenis']] += 1
+    most_common_damage = damage_counter.most_common(1)[0][0] if damage_counter else "N/A"
+
+    summary_stats = {
+        "total_photos": total_photos,
+        "photos_with_damage": photos_with_damage,
+        "average_pci": average_pci,
+        "most_common_damage": most_common_damage
+    }
+    
+    # Siapkan data untuk Kanban Board
+    kanban_data = {
+        "Excellent": [], # PCI 85-100
+        "Good": [],      # PCI 70-84
+        "Fair": [],      # PCI 55-69
+        "Poor": []        # PCI < 55
+    }
+
+    for h in hasil_list:
+        pci = h['nilai_pci']
+        if pci is None:
+            continue
+        if pci >= 85:
+            kanban_data["Excellent"].append(h)
+        elif pci >= 70:
+            kanban_data["Good"].append(h)
+        elif pci >= 55:
+            kanban_data["Fair"].append(h)
+        else:
+            kanban_data["Poor"].append(h)
 
     conn.close()
-    return render_template("detail_folder.html", folder=folder, hasil_list=hasil_list)
+    return render_template("detail_folder.html", folder=folder, hasil_list=hasil_list, summary=summary_stats, kanban_data=kanban_data)
 
 from ultralytics import YOLO
 import cv2
