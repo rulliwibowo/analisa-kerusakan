@@ -219,19 +219,25 @@ content %}
               </div>
               <div class="card-body">
                 <div class="row text-center">
-                  <div class="col-md-4 mb-3">
+                  <div class="col-md-3 mb-3">
+                    <h6 class="mb-1">Dominant Damage</h6>
+                    <p class="h5 text-primary mb-0">
+                      <span id="info-jenis">-</span>
+                    </p>
+                  </div>
+                  <div class="col-md-3 mb-3">
                     <h6 class="mb-1">Damage Area</h6>
                     <p class="h5 text-danger mb-0">
                       <span id="info-area">-</span>
                     </p>
                   </div>
-                  <div class="col-md-4 mb-3">
+                  <div class="col-md-3 mb-3">
                     <h6 class="mb-1">Deduct Value</h6>
                     <p class="h5 text-warning mb-0">
                       <span id="info-dv">-</span>
                     </p>
                   </div>
-                  <div class="col-md-4 mb-3">
+                  <div class="col-md-3 mb-3">
                     <h6 class="mb-1">PCI</h6>
                     <p class="h5 text-success mb-0">
                       <span id="info-pci">-</span>
@@ -328,6 +334,21 @@ content %}
     const boxScript = document.getElementById("boxes-" + id);
     if (!boxScript) return;
     const boxes = JSON.parse(boxScript.textContent);
+
+    // --- LOGIKA BARU: Tentukan jenis kerusakan dominan ---
+    let dominantJenis = "N/A";
+    if (boxes && boxes.length > 0) {
+      const damageCounts = boxes.reduce((acc, box) => {
+        acc[box.jenis] = (acc[box.jenis] || 0) + 1;
+        return acc;
+      }, {});
+
+      dominantJenis = Object.keys(damageCounts).reduce((a, b) =>
+        damageCounts[a] > damageCounts[b] ? a : b
+      );
+    }
+    document.getElementById("info-jenis").textContent = dominantJenis;
+    // --- Akhir Logika Baru ---
 
     // Definisikan fungsi untuk menggambar.
     const drawCanvasContent = function () {
